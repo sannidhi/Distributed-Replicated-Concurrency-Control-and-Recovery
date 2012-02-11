@@ -1,0 +1,8 @@
+begin(T1)
+begin(T2)
+R(T2,x1)
+W(T1,x1,2004)
+dump(x1)
+end(T2)
+end(T1)
+dump(2) 

@@ -1,0 +1,6 @@
+Its a java project. To COMPILE and RUN it after importing/forking the project:
+
+javac RepCRecTest.java
+java RepCRecTest 
+
+

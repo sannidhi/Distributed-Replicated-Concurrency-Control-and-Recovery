@@ -1,0 +1,7 @@
+begin(T1)            
+R(T1,x1)
+begin(T2)
+W ( T2,x2, 2002)
+W(T2,x1,2001) 
+W(T1, x2,1002)
+end(T1)

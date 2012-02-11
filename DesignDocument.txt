@@ -1,0 +1,46 @@
+Project Summary: 
+
+To implement a distributed concurrency algorithm and commit algorithm with replication. 
+
+Classes:
+
+TransactionManager :
+
+The TM gets the input instructions from the file 
+Recognizes the type of operation (R, W, RO, Begin, End, Fail, Recover, Dump) to be performed via the executeInstruction(Instruction instruction) method.
+It sends the relevant information pertaining to the current instruction to the Site Manager for execution
+The TM either aborts or blocks the transaction, if the requested operation did not execute successfully
+
+Site Manager: 
+Manages the sites: populates the variables on the sites using init(site number) and knows about the structure of the sites – in this case: odd/even sites. Also initializes the DataLockManagers on all the sites
+Assigns the current instruction to a site which is currently available and has the requested variable present on it using the assignSites() method
+ Performs preprocessing on the instruction’s and sends only the relevant information to the assigned site for execution
+For site level operations, the Site Manager handles it single handedly in the following way: 
+Fail(siteID): Makes the site unavailable and asks all the sites to release the locks held by all the transactions that were currently live on the failing site
+Recover(siteID): Makes the site available for write and asks the recovered site to set all the variables present in the Stable Storage to be set to obsolete. 
+Dump(): It asks all the available sites to print the values of the variables from their respective Stable Storages
+
+Site:
+Each site has a Data Lock Manager which is called to execute the following operations:
+R(): ReadOnly operations are allowed to read directly from the Stable Storage of the Site but the Read operations of the transaction are directed to the DataLockManager on the particular site. 
+W(): After the data lock managers sends the outcome – whether the lock was granted to the Transaction or not – the Site acts on the decision. If the lock is not granted, and the transaction is not blocked, then the Site clears all the locks on all the variables of the aborted Site.
+End(): The site sends the information of the committing transaction to the DataLockManager to make the lock modifications on the variables belonging to that transaction
+
+Data Lock Manager: 
+Present inside every Site, the data lock manager is responsible to grant locks (shared and exclusive) to the incoming transaction
+checkGrantSharedLock(): This function checks whether it is possible to grant a shared lock on the requested variable based on the following conditions:
+If the variable has an exclusive lock: If the transaction holding the lock Is younger to the current transaction then according to the wait die protocol – block the current transaction until the lock is available Else Reject grant & return to abort the transaction
+If it doesn’t have an exclusive lock and the variable is not obsolete: Grant lock and add the transaction to the list of Shared Owners
+If it doesn’t have an exclusive lock and the variable IS obsolete: Grant read to the non-replicated variables 
+checkGrantWriteLock(): This function checks whether it is possible to grant an exclusive lock on the requested variable based on the following conditions:
+If the variable has a shared lock belonging to the same transaction then the write lock is granted
+If the variable does not have any existing shared locks then write lock is granted
+If the variable has an exclusive lock or has multiple shared locks then write lock is not granted. The transaction is either blocked or aborted depending on the wait die protocol
+end(): 
+The values of the variables which are operated upon by the committing transaction are transferred to the stable storage from the volatile memory.
+All the locks (both shared and exclusive) on the variables belonging to that transaction are removed.  
+
+
+Summary: 
+
+Transaction Manager -> Site Manager -> Site -> DataLockManager ->  Results returned to the Transaction Manager
